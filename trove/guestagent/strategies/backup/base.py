@@ -70,7 +70,6 @@ class BackupRunner(Strategy):
         self.end_of_segment = False
         self.file_checksum = hashlib.md5()
         self.segment_checksum = hashlib.md5()
-        self.swift_checksum = hashlib.md5()
         self.command = self.cmd % kwargs
         super(BackupRunner, self).__init__()
 
@@ -154,9 +153,6 @@ class BackupRunner(Strategy):
 
         self.file_checksum.update(chunk)
         self.segment_checksum.update(chunk)
-        # The swift checksum is the checksum of the concatenated segment
-        # checksums
-        self.swift_checksum.update(self.segment_checksum.hexdigest())
         self.content_length += len(chunk)
         self.segment_length += len(chunk)
         return chunk

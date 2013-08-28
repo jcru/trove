@@ -14,6 +14,8 @@
 #    under the License.
 #
 
+import hashlib
+
 from trove.guestagent.strategies.storage import base
 from trove.openstack.common import log as logging
 from trove.common.remote import create_swift_client
@@ -41,22 +43,26 @@ class SwiftStorage(base.Storage):
         # Create the container (save_location) if it doesn't already exist
         self.connection.put_container(save_location)
 
+        # Swift Checksum is the checksum of the concatenated segment checksums
+        swift_checksum = hashlib.md5()
+
         # Read from the stream and write to the container in swift
         while not stream.end_of_file:
             etag = self.connection.put_object(save_location,
                                               stream.segment,
                                               stream)
 
+            segment_checksum = stream.segment_checksum.hexdigest()
+
             # Check each segment MD5 hash against swift etag
             # Raise an error and mark backup as failed
-            if etag != stream.segment_checksum.hexdigest():
+            if etag != segment_checksum:
                 LOG.error(
                     "Error saving data to swift. ETAG: %s File MD5: %s",
                     etag, stream.segment_checksum.hexdigest())
                 return (False, "Error saving data to Swift!", None, None)
 
-            #TODO(joe.cruz) swift checksum?
-            checksum = stream.checksum.hexdigest()
+            swift_checksum.update(segment_checksum)
 
         # Whole file checksum
         # checksum = stream.file_checksum.hexdigest()
@@ -77,7 +83,6 @@ class SwiftStorage(base.Storage):
         # Check the checksum of the concatenated segment checksums against
         # swift manifest etag.
         # Raise an error and mark backup as failed
-        swift_checksum = stream.swift_checksum.hexdigest()
         if etag != swift_checksum:
             LOG.error(
                 "Error saving data to swift. Manifest ETAG: %s Swift MD5: %s",

@@ -455,6 +455,13 @@ class Instance(BuiltInstance):
                 if not Backup.check_object_exist(context, location):
                     raise exception.BackupFileNotFound(location=location)
 
+                backup_checksum = backup_info.checksum
+                LOG.info(_("Checking if backup checksum matches original."))
+                if not Backup.check_object_checksum_matches(context, location,
+                                                            backup_checksum):
+                        raise exception.RestoreBackupIntegrityError(
+                                                           backup_id=backup_id)
+
             db_info = DBInstance.create(name=name, flavor_id=flavor_id,
                                         tenant_id=context.tenant,
                                         volume_size=volume_size,

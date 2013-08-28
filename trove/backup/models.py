@@ -196,6 +196,34 @@ class Backup(object):
             else:
                 raise exception.SwiftAuthError(tenant_id=context.tenant)
 
+    @classmethod
+    def check_object_checksum_matches(cls, context, location,
+                                      original_checksum):
+        """This makes a HEAD call on the object to check that the swift
+        checksum (etag; checksum of concatenated segment checksums) matches the
+        original Trove DB backup checksum.
+
+        Making a HEAD call to verify the etag is a ALOT faster than downloading
+        the entire file with a GET and and finding out the etag doesnt match
+        """
+        try:
+            parts = location.split('/')
+            obj = parts[-1]
+            container = parts[-2]
+            client = create_swift_client(context)
+            resp = client.head_object(container, obj)
+            # swift returns etag in double quotes
+            # e.g. '"dc3b0827f276d8d78312992cc60c2c3f"'
+            swift_checksum = resp['etag'].strip('"')
+            if original_checksum != swift_checksum:
+                return False
+            return True
+        except ClientException as e:
+            if e.http_status == 404:
+                raise exception.BackupFileNotFound(location=location)
+            else:
+                raise exception.SwiftAuthError(tenant_id=context.tenant)
+
 
 def persisted_models():
     return {'backups': DBBackup}

@@ -293,3 +293,8 @@ class BackupFileNotFound(NotFound):
 class SwiftAuthError(TroveError):
 
     message = _("Swift account not accessible for tenant %(tenant_id)s.")
+
+class RestoreBackupIntegrityError(TroveError):
+
+    message = _("Current Swift object checksum does not match original "
+                "checksum for backup %(backup_id)s.")

@@ -19,7 +19,6 @@ from trove.openstack.common import log as logging
 from trove.common.remote import create_swift_client
 from trove.common import utils
 from eventlet.green import subprocess
-import zlib
 
 LOG = logging.getLogger(__name__)
 
@@ -50,25 +49,43 @@ class SwiftStorage(base.Storage):
 
             # Check each segment MD5 hash against swift etag
             # Raise an error and mark backup as failed
-            if etag != stream.schecksum.hexdigest():
+            if etag != stream.segment_checksum.hexdigest():
                 LOG.error(
                     "Error saving data to swift. ETAG: %s File MD5: %s",
-                    etag, stream.schecksum.hexdigest())
+                    etag, stream.segment_checksum.hexdigest())
                 return (False, "Error saving data to Swift!", None, None)
 
+            #TODO(joe.cruz) swift checksum?
             checksum = stream.checksum.hexdigest()
-            url = self.connection.url
-            location = "%s/%s/%s" % (url, save_location, stream.manifest)
+
+        # Whole file checksum
+        # checksum = stream.file_checksum.hexdigest()
+        url = self.connection.url
+        location = "%s/%s/%s" % (url, save_location, stream.manifest)
 
         # Create the manifest file
+        # We create the manifest file after all the segments have been uploaded
+        # so a partial swift object file can't be downloaded; if the manifest
+        # file exists then all segments have been uploaded so the whole backup
+        # file can be downloaded.
         headers = {'X-Object-Manifest': stream.prefix}
-        self.connection.put_object(save_location,
-                                   stream.manifest,
-                                   contents='',
-                                   headers=headers)
+        etag = self.connection.put_object(save_location,
+                                          stream.manifest,
+                                          contents='',
+                                          headers=headers)
+
+        # Check the checksum of the concatenated segment checksums against
+        # swift manifest etag.
+        # Raise an error and mark backup as failed
+        swift_checksum = stream.swift_checksum.hexdigest()
+        if etag != swift_checksum:
+            LOG.error(
+                "Error saving data to swift. Manifest ETAG: %s Swift MD5: %s",
+                etag, swift_checksum)
+            return (False, "Error saving data to Swift!", None, None)
 
         return (True, "Successfully saved data to Swift!",
-                checksum, location)
+                swift_checksum, location)
 
     def _explodeLocation(self, location):
         storage_url = "/".join(location.split('/')[:-2])

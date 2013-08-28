@@ -76,7 +76,7 @@ class BackupAgent(object):
 
             LOG.info("Backup %s completed status: %s", backup_id, success)
             LOG.info("Backup %s file size: %s", backup_id, bkup.content_length)
-            LOG.info('Backup %s file checksum: %s', backup_id, checksum)
+            LOG.info('Backup %s swift checksum: %s', backup_id, checksum)
             LOG.info('Backup %s location: %s', backup_id, location)
 
             if not success:

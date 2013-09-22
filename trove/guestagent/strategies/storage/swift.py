@@ -28,6 +28,8 @@ LOG = logging.getLogger(__name__)
 class DownloadError(Exception):
     """Error running the Swift Download Command."""
 
+class SwiftDownloadIntegrityError(Exception):
+    """Integrity error while running the Swift Download Command."""
 
 class SwiftStorage(base.Storage):
     """ Implementation of Storage Strategy for Swift """
@@ -58,7 +60,7 @@ class SwiftStorage(base.Storage):
             # Raise an error and mark backup as failed
             if etag != segment_checksum:
                 LOG.error(
-                    "Error saving data to swift. ETAG: %s File MD5: %s",
+                    "Error saving data segment to swift. ETAG: %s File MD5: %s",
                     etag, stream.segment_checksum.hexdigest())
                 return (False, "Error saving data to Swift!", None, None)
 
@@ -98,16 +100,18 @@ class SwiftStorage(base.Storage):
         filename = location.split('/')[-1]
         return storage_url, container, filename
 
-    def load(self, context, location, is_zipped):
+    def load(self, context, location, is_zipped, backup_checksum):
         """ Restore a backup from the input stream to the restore_location """
 
         storage_url, container, filename = self._explodeLocation(location)
 
-        return SwiftDownloadStream(auth_token=context.auth_token,
+        return SwiftDownloadStream(context,
+                                   auth_token=context.auth_token,
                                    storage_url=storage_url,
                                    container=container,
                                    filename=filename,
-                                   is_zipped=is_zipped)
+                                   is_zipped=is_zipped,
+                                   backup_checksum=backup_checksum)
 
 
 class SwiftDownloadStream(object):
@@ -117,10 +121,12 @@ class SwiftDownloadStream(object):
            "--os-storage-url=%(storage_url)s "
            "download %(container)s %(filename)s -o -")
 
-    def __init__(self, **kwargs):
+    def __init__(self, context, **kwargs):
         self.process = None
         self.pid = None
         self.cmd = self.cmd % kwargs
+        self.original_backup_checksum = kwargs.get('backup_checksum', None)
+        self.swift_client = create_swift_client(context)
 
     def __enter__(self):
         """Start up the process"""
@@ -143,7 +149,20 @@ class SwiftDownloadStream(object):
         return self.process.stdout.read(*args, **kwargs)
 
     def run(self):
+        # Right before downloading swift object lets check that the current
+        # swift object checksum matches the original backup checksum
+        self._verify_checksum()
         self.process = subprocess.Popen(self.cmd, shell=True,
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE)
         self.pid = self.process.pid
+
+    def _verify_checksum(self):
+        if self.original_backup_checksum:
+            resp = self.swift_client.head_object(self.container, self.filename)
+            print "Swift HEAD resp: %r" % resp
+            current_swift_checksum = resp['etag']
+            if current_swift_checksum != self.original_backup_checksum:
+                raise SwiftDownloadIntegrityError("Original backup checksum "
+                                                  "does not match current "
+                                                  "checksum.")

@@ -120,7 +120,8 @@ class BackupAgent(object):
             LOG.debug("Preparing storage to download stream.")
             download_stream = storage_strategy.load(context,
                                                     backup.location,
-                                                    restore_runner.is_zipped)
+                                                    restore_runner.is_zipped,
+                                                    backup.checksum)
 
             with restore_runner(restore_stream=download_stream,
                                 restore_location=restore_location) as runner:

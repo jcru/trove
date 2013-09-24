@@ -28,8 +28,10 @@ LOG = logging.getLogger(__name__)
 class DownloadError(Exception):
     """Error running the Swift Download Command."""
 
+
 class SwiftDownloadIntegrityError(Exception):
     """Integrity error while running the Swift Download Command."""
+
 
 class SwiftStorage(base.Storage):
     """ Implementation of Storage Strategy for Swift """
@@ -59,9 +61,9 @@ class SwiftStorage(base.Storage):
             # Check each segment MD5 hash against swift etag
             # Raise an error and mark backup as failed
             if etag != segment_checksum:
-                LOG.error(
-                    "Error saving data segment to swift. ETAG: %s File MD5: %s",
-                    etag, stream.segment_checksum.hexdigest())
+                LOG.error("Error saving data segment to swift. "
+                          "ETAG: %s File MD5: %s",
+                          etag, stream.segment_checksum.hexdigest())
                 return (False, "Error saving data to Swift!", None, None)
 
             swift_checksum.update(segment_checksum)

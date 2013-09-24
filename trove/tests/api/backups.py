@@ -188,6 +188,13 @@ class ListBackups(object):
 class RestoreUsingBackup(object):
 
     @test
+    def test_restore_integrity_error(self):
+        """test for error when restoring from a swift backup file that has been
+        modified.
+        """
+        pass
+
+    @test
     def test_restore(self):
         """test restore"""
         if test_config.auth_strategy == "fake":

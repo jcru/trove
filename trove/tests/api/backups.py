@@ -20,6 +20,9 @@ from proboscis import test
 from proboscis import SkipTest
 from proboscis.decorators import time_out
 import troveclient.compat
+from trove.backup import models as backup_models
+from trove.backup.models import DBBackup
+from trove.common.context import TroveContext
 from trove.common.utils import poll_until
 from trove.tests.util import test_config
 from trove.tests.util import create_dbaas_client
@@ -186,6 +189,42 @@ class ListBackups(object):
 @test(runs_after=[ListBackups],
       groups=[GROUP])
 class RestoreUsingBackup(object):
+
+    @test
+    def test_restore_checksum_mismatch(self):
+        """test checksum validation during restore"""
+        # if test_config.auth_strategy == "fake":
+        #     raise SkipTest("Skipping restore tests for fake mode.")
+
+        DBBackup.create(
+            name="anotherBackup",
+            description="build",
+            state=backup_models.BackupState.COMPLETED,
+            instance_id=instance_info.id,
+            checksum='000'
+            deleted=False)
+
+        result = instance_info.dbaas.instances.backups(instance_info.id)
+        print "MARIO backups result:", result
+
+        wrong_checksum = '666'
+        # context = TroveContext(is_admin=True)
+        # db_info = DBBackup.find_by(id=backup_info.id)
+        # correct_checksum = db_info.checksum
+        # db_info.checksum = wrong_checksum
+        # db_info.save()
+
+        restorePoint = {"backupRef": backup_info.id}
+        result = instance_info.dbaas.instances.create(
+            instance_info.name + "_restore",
+            instance_info.dbaas_flavor_href,
+            instance_info.volume,
+            restorePoint=restorePoint)
+        assert_equal(409, instance_info.dbaas.last_http_code)
+
+        # Change back to correct checksum
+        # db_info.checksum = correct_checksum
+        # db_info.save()
 
     @test
     def test_restore(self):

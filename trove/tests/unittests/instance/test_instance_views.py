@@ -60,6 +60,19 @@ class InstanceDetailViewTest(TestCase):
         self.instance.root_password = 'iloveyou'
         self.instance.get_visible_ip_addresses = lambda: ["1.2.3.4"]
 
+        # Since the instance_metadata model looks and acts just like a
+        # dict there's no need to test that model here as it's already
+        # being tested in it's own unittests.  This should simply allow
+        # the instance view tests to verify that metadata is being
+        # presented back to the user when it is present in the database.
+        self.instance.metadata = {
+            'replication_contract': {
+                'replicates_to': [
+                    '61da50a7-fdd6-4af3-b64d-ddc33e6ebad4'
+                ]
+            }
+        }
+
     def tearDown(self):
         super(InstanceDetailViewTest, self).tearDown()
         InstanceView._build_links = self.build_links_method
@@ -87,3 +100,9 @@ class InstanceDetailViewTest(TestCase):
                          result['instance']['datastore']['version'])
         self.assertNotIn('hostname', result['instance'])
         self.assertEqual([self.ip], result['instance']['ip'])
+
+    def test_data_metadata(self):
+        view = InstanceDetailView(self.instance, Mock())
+        result = view.data()
+        self.assertEqual(
+            self.instance.metadata, result['instance']['metadata'])

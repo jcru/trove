@@ -31,7 +31,7 @@ class FakeInstanceTask(object):
 class FakeDBInstance(object):
 
     def __init__(self):
-        self.id = None
+        self.id = 'b1845193-903e-4184-9f9b-aea411f5b3e5'
         self.deleted = False
         self.datastore_version_id = test_config.dbaas_datastore_version_id
         self.server_status = "ACTIVE"

@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import datetime
-
+import time
 import testtools
 from mock import Mock, MagicMock, patch
 from testtools.matchers import Equals, Is
@@ -28,6 +28,7 @@ import trove.db.models
 from trove.taskmanager import models as taskmanager_models
 import trove.guestagent.api
 from trove.backup import models as backup_models
+from trove.common import context
 from trove.common import remote
 from trove.common.exception import GuestError
 from trove.common.exception import PollTimeOut
@@ -193,8 +194,21 @@ class FreshInstanceTasksTest(testtools.TestCase):
         with NamedTemporaryFile(delete=False) as f:
             self.guestconfig = f.name
             f.write(self.guestconfig_content)
+
+        # Create some real objects to pass into FreshInstanceTasks
+        # Make a real context object instead of passing a mock that breaks
+        # metadata lookups.
+        self.context = context.TroveContext(
+            tenant='TENANT-' + str(int(time.time())))
+
+        db_info = DBInstance(InstanceTasks.BUILDING, name="TestInstance")
+
+        # Add a real datastore version uuid to the instance db_info so
+        # datastore lookups actually work.
+        db_info.datastore_version_id = '20000000-0000-0000-0000-000000000002'
+
         self.freshinstancetasks = taskmanager_models.FreshInstanceTasks(
-            None, Mock(), None, None)
+            self.context, db_info, None, None)
 
     def tearDown(self):
         super(FreshInstanceTasksTest, self).tearDown()

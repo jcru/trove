@@ -97,6 +97,10 @@ class InstanceDetailView(InstanceView):
         if self.instance.root_password:
             result['instance']['password'] = self.instance.root_password
 
+        metadata = self.instance.metadata
+        if metadata:
+            result['instance']['metadata'] = metadata.copy()
+
         return result
 
     def _build_configuration_info(self):

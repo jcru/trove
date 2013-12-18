@@ -185,6 +185,7 @@ if __name__ == "__main__":
         from trove.tests.api.mgmt import instances_actions as mgmt_actions  # noqa
         from trove.tests.api.mgmt import storage  # noqa
         from trove.tests.api.mgmt import malformed_json  # noqa
+        from trove.tests.api import metadata  # noqa
     except Exception as e:
         print("Run tests failed: %s" % e)
         traceback.print_exc()

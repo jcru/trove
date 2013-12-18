@@ -11,10 +11,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+import time
 from mock import Mock
 from testtools import TestCase
 from trove.common import cfg
+from trove.common import context
 from trove.common.instance import ServiceStatuses
 from trove.instance.models import filter_ips
 from trove.instance.models import InstanceServiceStatus
@@ -30,8 +31,19 @@ class SimpleInstanceTest(TestCase):
 
     def setUp(self):
         super(SimpleInstanceTest, self).setUp()
+
+        # Make a real context object instead of passing a mock that breaks
+        # metadata lookups.
+        self.context = context.TroveContext(
+            tenant='TENANT-' + str(int(time.time())))
+
         db_info = DBInstance(InstanceTasks.BUILDING, name="TestInstance")
-        self.instance = SimpleInstance(None, db_info,
+
+        # Add a real datastore version uuid to the instance db_info so
+        # datastore lookups actually work.
+        db_info.datastore_version_id = '20000000-0000-0000-0000-000000000002'
+
+        self.instance = SimpleInstance(self.context, db_info,
                                        InstanceServiceStatus(
                                            ServiceStatuses.BUILDING),
                                        ds_version=Mock(), ds=Mock())

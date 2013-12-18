@@ -36,6 +36,7 @@ from trove.db import get_db_api
 from trove.db import models as dbmodels
 from trove.datastore import models as datastore_models
 from trove.backup.models import Backup
+from trove.metadata.models import InstanceMetadata
 from trove.quota.quota import run_with_quotas
 from trove.instance.tasks import InstanceTask
 from trove.instance.tasks import InstanceTasks
@@ -344,6 +345,16 @@ class SimpleInstance(object):
             return Configuration.load(self.context,
                                       self.db_info.configuration_id)
 
+    @property
+    def metadata(self):
+        # There may be issues where tests pass in a context of None, this
+        # is unacceptable.
+        if self.context is None:
+            raise exception.TroveError(_("Context passed to instance is None"))
+
+        if self.db_info.id:
+            return InstanceMetadata(self.context, self.db_info.id)
+
 
 class DetailInstance(SimpleInstance):
     """A detailed view of an Instance.
@@ -508,6 +519,11 @@ class BaseInstance(SimpleInstance):
             self.update_db(task_status=InstanceTasks.DELETING,
                            configuration_id=None)
             task_api.API(self.context).delete_instance(self.id)
+
+            # Clean up the metadata if there is some
+            metadata = self.metadata
+            if metadata:
+                metadata.clear()
 
         deltas = {'instances': -1}
         if CONF.trove_volume_support:

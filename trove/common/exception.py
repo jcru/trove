@@ -440,3 +440,15 @@ class NoServiceEndpoint(TroveError):
 class EmptyCatalog(NoServiceEndpoint):
     """The service catalog is empty."""
     message = 'Empty catalog'
+
+
+class MetadataCreationError(TroveError):
+    message = _('Failed to create metadata entry for instance')
+
+
+class MetadataTypeError(TroveError):
+    message = _('Metadata root must be a dict, got type %(metatype)s')
+
+
+class MetadataLookupError(NotFound):
+    message = _('Failed to lookup metadata from the database')

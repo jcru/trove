@@ -44,7 +44,15 @@ class TestInstanceController(TestCase):
                     {
                         "name": "db2"
                     }
-                ]
+                ],
+                "metadata": {
+                    'replication_contract': {
+                        'replicates_from': [
+                            '07085bb9-59a3-40a3-9f10-dc24da644c37'
+                        ],
+                        'writeable': True
+                    }
+                }
             }
         }
 

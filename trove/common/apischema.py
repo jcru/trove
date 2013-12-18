@@ -180,6 +180,62 @@ configuration_id = {
     ]
 }
 
+metadata_value = {
+    "type": [
+        "object",
+        "array",
+        "number",
+        "string",
+        "boolean"
+    ]
+}
+
+metadata = {
+    "create": {
+        "type": "object",
+        "name": "metadata:create",
+        "required": ["metadata"],
+        "properties": {
+            "metadata": {
+                "type": "object",
+                "required": ["value"],
+                "properties": {
+                    "value": metadata_value
+                }
+            }
+        }
+    },
+    "update": {
+        "type": "object",
+        "name": "metadata:update",
+        "required": ["metadata"],
+        "properties": {
+            "metadata": {
+                "type": "object",
+                "required": ["key", "value"],
+                "properties": {
+                    "key": non_empty_string,
+                    "value": metadata_value
+                }
+            }
+        }
+    },
+    "edit": {
+        "type": "object",
+        "name": "metadata:edit",
+        "required": ["metadata"],
+        "properties": {
+            "metadata": {
+                "type": "object",
+                "required": ["value"],
+                "properties": {
+                    "value": metadata_value
+                }
+            }
+        }
+    }
+}
+
 instance = {
     "create": {
         "type": "object",

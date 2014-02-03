@@ -1087,8 +1087,16 @@ class MigrateAction(ResizeActionBase):
     def _initiate_nova_action(self):
         LOG.debug(_("Migrating instance %s without flavor change ...")
                   % self.instance.id)
-        LOG.debug(_("Forcing migration to host(%s)") % self.host)
-        self.instance.server.migrate(force_host=self.host)
+        if self.host:
+            LOG.debug(_("Forcing migration to host(%s)") % self.host)
+            # The Nova live migrate call has nothing to do with "live"
+            # VM migrations, its just a migrate call with the ability to
+            # specify the host to migrate to, as well as block_migration
+            # and disk_over_commit.
+            self.instance.server.live_migrate(host=self.host)
+        else:
+            LOG.debug(_("Forcing migration and allowing Nova choose a host"))
+            self.instance.server.migrate()
 
     def _record_action_success(self):
         LOG.debug(_("Successfully finished Migration to "

@@ -230,7 +230,19 @@ class MigrateTests(ResizeTestBase):
     def test_successful_migrate(self):
         self.mock.StubOutWithMock(self.instance.server, 'migrate')
         self._stop_db()
-        self.server.migrate(force_host=None)
+        self.server.migrate()
+        self._server_changes_to("VERIFY_RESIZE", NEW_FLAVOR_ID)
+        self.instance._set_service_status_to_paused()
+        self.instance.service_status = rd_instance.ServiceStatuses.RUNNING
+        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
+        self._start_mysql()
+        self.instance.server.confirm_resize()
+
+    def test_successful_force_migrate(self):
+        force_host_to = "fake_host_3"
+        self.mock.StubOutWithMock(self.instance.server, 'live_migrate')
+        self._stop_db()
+        self.server.live_migrate(force_host_to)
         self._server_changes_to("VERIFY_RESIZE", NEW_FLAVOR_ID)
         self.instance._set_service_status_to_paused()
         self.instance.service_status = rd_instance.ServiceStatuses.RUNNING

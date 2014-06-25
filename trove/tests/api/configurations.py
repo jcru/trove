@@ -197,23 +197,17 @@ class CreateConfigurations(object):
     @test
     def test_configurations_create_value_out_of_bounds(self):
         """Test create configuration with value out of bounds."""
-        #TODO make configurable/dynamic
-        values = '{"connect_timeout": 1000000}'
+        values = json.dumps(CONFIG.trove_configurations_out_of_bounds_over)
         assert_unprocessable(instance_info.dbaas.configurations.create,
                              CONFIG_NAME, values, CONFIG_DESC)
-        #TODO make configurable/dynamic
-        values = '{"connect_timeout": -10}'
+        values = json.dumps(CONFIG.trove_configurations_out_of_bounds_under)
         assert_unprocessable(instance_info.dbaas.configurations.create,
                              CONFIG_NAME, values, CONFIG_DESC)
 
     @test
     def test_valid_configurations_create(self):
-        #TODO make configurable/dynamic
         # create a configuration with valid parameters
-        # values = ('{"connect_timeout": 120, "local_infile": true, '
-        #           '"collation_server": "latin1_swedish_ci"}')
         values = json.dumps(CONFIG.trove_configurations_valid_values)
-        print "MARIO trove_configurations_valid_values", values
         expected_values = json.loads(values)
         result = instance_info.dbaas.configurations.create(CONFIG_NAME,
                                                            values,
@@ -228,12 +222,9 @@ class CreateConfigurations(object):
 
     @test(runs_after=[test_valid_configurations_create])
     def test_appending_to_existing_configuration(self):
-        #TODO make configurable/dynamic
         # test being able to update and insert new parameter name and values
         # to an existing configuration
-        # values = '{"join_buffer_size": 1048576, "connect_timeout": 60}'
         values = json.dumps(CONFIG.trove_configurations_appending_values)
-        print "MARIO trove_configurations_appending_values", values
         instance_info.dbaas.configurations.edit(configuration_info.id,
                                                 values)
         resp, body = instance_info.dbaas.client.last_response
@@ -373,13 +364,9 @@ class ListConfigurations(object):
 
     @test
     def test_changing_configuration_with_nondynamic_parameter(self):
-        #TODO make configurable/dynamic?
         # test that changing a non-dynamic parameter is applied to instance
         # and show that the instance requires a restart
-        # values = ('{"join_buffer_size":1048576,'
-        #           '"innodb_buffer_pool_size":57671680}')
         values = json.dumps(CONFIG.trove_configurations_nondynamic_parameter)
-        print "MARIO trove_configurations_nondynamic_parameter", values
         instance_info.dbaas.configurations.update(configuration_info.id,
                                                   values)
         resp, body = instance_info.dbaas.client.last_response

@@ -212,7 +212,8 @@ class CreateConfigurations(object):
         # create a configuration with valid parameters
         # values = ('{"connect_timeout": 120, "local_infile": true, '
         #           '"collation_server": "latin1_swedish_ci"}')
-        values = CONFIG.trove_configurations_valid_values
+        values = json.dumps(CONFIG.trove_configurations_valid_values)
+        print "MARIO trove_configurations_valid_values", values
         expected_values = json.loads(values)
         result = instance_info.dbaas.configurations.create(CONFIG_NAME,
                                                            values,
@@ -231,7 +232,8 @@ class CreateConfigurations(object):
         # test being able to update and insert new parameter name and values
         # to an existing configuration
         # values = '{"join_buffer_size": 1048576, "connect_timeout": 60}'
-        values = CONFIG.trove_configurations_appending_values
+        values = json.dumps(CONFIG.trove_configurations_appending_values)
+        print "MARIO trove_configurations_appending_values", values
         instance_info.dbaas.configurations.edit(configuration_info.id,
                                                 values)
         resp, body = instance_info.dbaas.client.last_response
@@ -376,7 +378,8 @@ class ListConfigurations(object):
         # and show that the instance requires a restart
         # values = ('{"join_buffer_size":1048576,'
         #           '"innodb_buffer_pool_size":57671680}')
-        values = CONFIG.trove_configurations_nondynamic_parameter
+        values = json.dumps(CONFIG.trove_configurations_nondynamic_parameter)
+        print "MARIO trove_configurations_nondynamic_parameter", values
         instance_info.dbaas.configurations.update(configuration_info.id,
                                                   values)
         resp, body = instance_info.dbaas.client.last_response

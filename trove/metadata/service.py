@@ -16,6 +16,7 @@
 from trove.common import apischema
 from trove.common import exception
 from trove.common import wsgi
+from trove.instance import models as instances_models
 from trove.metadata.models import Metadata
 from trove.metadata.models import MetadataEntry
 from trove.metadata import views
@@ -42,6 +43,14 @@ class MetadataController(wsgi.Controller):
         LOG.info(
             _('Beginning list of instance metadata for %s') % instance_id)
         context = req.environ[wsgi.CONTEXT_KEY]
+        #FIXME bad request if instance_id doesnt exist
+        try:
+            instances_models.get_db_info(context, instance_id)
+        except exception.NotFound:
+            LOG.info(_('Instance id %s for metadata does not exist.') %
+                     instance_id)
+            raise exception.BadRequest(_('Instance ID: %s does not exist.') %
+                                       instance_id)
         dbmeta = Metadata(context, instance_id)
         LOG.info(_('Finished list of instance metadata for %s') % instance_id)
         return wsgi.Result(views.MetadataView(dbmeta, req=req).data(), 200)
@@ -62,6 +71,14 @@ class MetadataController(wsgi.Controller):
                    'instance %(instance_id)s') %
                  {'key': key, 'instance_id': instance_id})
         context = req.environ[wsgi.CONTEXT_KEY]
+        #FIXME if instance doesnt exist
+        try:
+            instances_models.get_db_info(context, instance_id)
+        except exception.NotFound:
+            LOG.info(_('Instance id %s for metadata does not exist.') %
+                     instance_id)
+            raise exception.BadRequest(_('Instance ID: %s does not exist.') %
+                                       instance_id)
         dbmeta = Metadata(context, instance_id)
         if dbmeta.get(key):
             LOG.info(_('Showing metadata key %s') % key)
@@ -69,7 +86,8 @@ class MetadataController(wsgi.Controller):
             return wsgi.Result(
                 views.MetadataKeyValueView(metadata, req=req).data(), 200)
         else:
-            msg = _('No metadata found for metadata key %s') % key
+            msg = _('No metadata key %(key)s found for instance id '
+                    '%(inst_id)s') % {'key': key, 'inst_id': instance_id}
             LOG.info(msg)
             raise exception.NotFound(msg)
 
@@ -93,7 +111,7 @@ class MetadataController(wsgi.Controller):
 
         :rtype: wsgi.Result
         """
-        LOG.info(
+        LOG.debug(
             _('Beginning creating metadata for instance: %s') % instance_id)
         value = body['metadata']['value']
         LOG.info(_('req: %(req)s, body: %(body)s, tenant_id: %(tenant_id)s, '
@@ -171,6 +189,7 @@ class MetadataController(wsgi.Controller):
             LOG.info(msg)
             raise exception.NotFound(msg)
 
+    #FIXME check to see if RESTful
     @staticmethod
     def update(req, body, tenant_id, instance_id, key):
         """

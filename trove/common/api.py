@@ -96,6 +96,7 @@ class API(wsgi.Router):
                        action="configuration",
                        conditions={'method': ['GET']})
 
+    #FIXME check to see if RESTful
     def _metadata_router(self, mapper):
         metadata_resource = MetadataController().create_resource()
         mapper.connect('/{tenant_id}/instances/{instance_id}/metadata',

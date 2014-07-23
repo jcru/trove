@@ -93,6 +93,12 @@ class TestMetadataController(TestMetadataBase):
                           self.create_body, self.tenant_id, self.instance_id,
                           self.metadata_key)
 
+    def test_create_no_instance(self):
+        bad_instance_id = "666"
+        self.assertRaises(BadRequest, self.controller.create, self.req,
+            self.create_body, self.tenant_id, bad_instance_id,
+            self.metadata_key)
+
     def test_edit(self):
         meta_to_replace = {
             'metadata': {
@@ -135,6 +141,26 @@ class TestMetadataController(TestMetadataBase):
                           meta_to_replace, self.tenant_id, self.instance_id,
                           'this_key_doesnt_exist')
 
+    def test_edit_no_instance(self):
+        bad_instance_id = "666"
+        meta_to_replace = {
+            'metadata': {
+                'value': {
+                    'replicates_from': [
+                        '07085bb9-59a3-40a3-9f10-dc24da644c37'
+                    ],
+                    'replicates_to': [
+                        'a94557b7-aef5-4c33-bcd6-adce1428351c'
+                    ],
+                    'writeable': True
+                }
+            }
+        }
+
+        self.assertRaises(BadRequest, self.controller.edit, self.req,
+                          meta_to_replace, self.tenant_id, bad_instance_id,
+                          'this_key_doesnt_exist')
+
     def test_delete(self):
         old_meta = self.controller.list(self.req, self.tenant_id,
                                         self.instance_id).data(
@@ -154,6 +180,12 @@ class TestMetadataController(TestMetadataBase):
     def test_delete_noexists(self):
         self.assertRaises(NotFound, self.controller.delete, self.req,
                           self.tenant_id, self.instance_id,
+                          'this_key_doesnt_exist')
+
+    def test_delete_no_instance(self):
+        bad_instance_id = "666"
+        self.assertRaises(BadRequest, self.controller.delete, self.req,
+                          self.tenant_id, bad_instance_id,
                           'this_key_doesnt_exist')
 
     def test_update(self):
@@ -201,4 +233,21 @@ class TestMetadataController(TestMetadataBase):
         }
         self.assertRaises(NotFound, self.controller.update, self.req,
                           meta_to_update, self.tenant_id, self.instance_id,
+                          'this_key_doesnt_exist')
+
+    def test_update_no_instance(self):
+        meta_to_update = {
+            'metadata': {
+                'key': 'newKey',
+                'value': {
+                    'testValue': [
+                        'a94557b7-aef5-4c33-bcd6-adce1428351c'
+                    ],
+                    'isGoodTest': True
+                }
+            }
+        }
+        bad_instance_id = "666"
+        self.assertRaises(BadRequest, self.controller.update, self.req,
+                          meta_to_update, self.tenant_id, bad_instance_id,
                           'this_key_doesnt_exist')

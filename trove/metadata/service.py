@@ -43,7 +43,6 @@ class MetadataController(wsgi.Controller):
         LOG.info(
             _('Beginning list of instance metadata for %s') % instance_id)
         context = req.environ[wsgi.CONTEXT_KEY]
-        #FIXME bad request if instance_id doesnt exist
         try:
             instances_models.get_db_info(context, instance_id)
         except exception.NotFound:
@@ -71,7 +70,6 @@ class MetadataController(wsgi.Controller):
                    'instance %(instance_id)s') %
                  {'key': key, 'instance_id': instance_id})
         context = req.environ[wsgi.CONTEXT_KEY]
-        #FIXME if instance doesnt exist
         try:
             instances_models.get_db_info(context, instance_id)
         except exception.NotFound:
@@ -120,6 +118,15 @@ class MetadataController(wsgi.Controller):
                  {'req': req, 'body': body, 'tenant_id': tenant_id,
                   'instance_id': instance_id, 'key': key, 'value': value})
         context = req.environ[wsgi.CONTEXT_KEY]
+
+        try:
+            instances_models.get_db_info(context, instance_id)
+        except exception.NotFound:
+            LOG.info(_('Instance id %s for metadata does not exist.') %
+                     instance_id)
+            raise exception.BadRequest(_('Instance ID: %s does not exist.') %
+                                       instance_id)
+
         dbmeta = Metadata(context, instance_id)
         LOG.info(_('DBMetadata in create: %s') % dbmeta)
         result = dbmeta.get(key)
@@ -173,6 +180,15 @@ class MetadataController(wsgi.Controller):
         LOG.info(
             _('Beginning edit on metadata for instance: %s') % instance_id)
         context = req.environ[wsgi.CONTEXT_KEY]
+
+        try:
+            instances_models.get_db_info(context, instance_id)
+        except exception.NotFound:
+            LOG.info(_('Instance id %s for metadata does not exist.') %
+                     instance_id)
+            raise exception.BadRequest(_('Instance ID: %s does not exist.') %
+                                       instance_id)
+
         value = body['metadata']['value']
         dbmeta = Metadata(context, instance_id)
         if key in dbmeta:
@@ -189,7 +205,6 @@ class MetadataController(wsgi.Controller):
             LOG.info(msg)
             raise exception.NotFound(msg)
 
-    #FIXME check to see if RESTful
     @staticmethod
     def update(req, body, tenant_id, instance_id, key):
         """
@@ -216,6 +231,15 @@ class MetadataController(wsgi.Controller):
         LOG.info(
             _('Beginning updating metadata for instance: %s') % instance_id)
         context = req.environ[wsgi.CONTEXT_KEY]
+
+        try:
+            instances_models.get_db_info(context, instance_id)
+        except exception.NotFound:
+            LOG.info(_('Instance id %s for metadata does not exist.') %
+                     instance_id)
+            raise exception.BadRequest(_('Instance ID: %s does not exist.') %
+                                       instance_id)
+
         value = body['metadata']['value']
         new_key = body['metadata']['key']
         dbmeta = Metadata(context, instance_id)
@@ -253,6 +277,15 @@ class MetadataController(wsgi.Controller):
                    'instance: %(instance_id)s') %
                  {'key': key, 'instance_id': instance_id})
         context = req.environ[wsgi.CONTEXT_KEY]
+
+        try:
+            instances_models.get_db_info(context, instance_id)
+        except exception.NotFound:
+            LOG.info(_('Instance id %s for metadata does not exist.') %
+                     instance_id)
+            raise exception.BadRequest(_('Instance ID: %s does not exist.') %
+                                       instance_id)
+
         dbmeta = Metadata(context, instance_id)
         if dbmeta.get(key):
             LOG.info(_('Deleting metadata key: %(key)s for instance '

@@ -16,6 +16,9 @@
 import uuid
 import testtools
 from mock import Mock
+from trove.instance.models import DBInstance
+from trove.instance.models import get_db_info
+from trove.instance.tasks import InstanceTasks
 from trove.metadata.models import Metadata
 from trove.metadata.service import MetadataController
 from trove.metadata.views import MetadataView
@@ -42,6 +45,20 @@ class FakeRequest(object):
     @property
     def environ(self):
         return self.__dict__
+
+class FakeInstance(object):
+    def __init__(self, name, tenant_id):
+        self.db_info = DBInstance(
+            task_status=InstanceTasks.BUILDING,
+            name=name,
+            id=str(uuid.uuid4()),
+            flavor_id='flavor_1',
+            datastore_version_id='1',
+            compute_instance_id='compute_id_1',
+            server_id='server_id_1',
+            tenant_id=tenant_id,
+            server_status="ACTIVE")
+        self.db_info.save()
 
 
 class TestMetadataBase(testtools.TestCase):
@@ -82,9 +99,13 @@ class TestMetadataBase(testtools.TestCase):
                 'value': 'newValue'
             }
         }
-        self.instance_id = str(uuid.uuid4())
-        self.second_instance_id = str(uuid.uuid4())
-        self.tenant_id = 'bae4c4d3-3188-4da9-9d97-d2cea9d8c062'
+        #self.tenant_id = 'bae4c4d3-3188-4da9-9d97-d2cea9d8c062'
+        self.tenant_id = CONTEXT.tenant
+        Inst1 = FakeInstance(name="TestInstance", tenant_id=self.tenant_id)
+        Inst2 = FakeInstance(name="TestInstance2", tenant_id=self.tenant_id)
+        self.instance_id = Inst1.db_info.id
+        self.second_instance_id = Inst2.db_info.id
+
         self.context = CONTEXT
         self.req = FakeRequest()
         self.controller = MetadataController()
